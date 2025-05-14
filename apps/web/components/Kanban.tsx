@@ -314,14 +314,24 @@ const Kanban = ({
           <div className="w-full sm:w-auto">
             <ProjectSelector />
           </div>
-          <Modal open={openModal} setOpen={setOpenModal} editTask={editTask} />
+          <Modal
+            open={openModal}
+            setOpen={setOpenModal}
+            editTask={editTask}
+            showTriggerButton={false}
+          />
         </div>
       )}
 
       {/* Always show the modal button, even when ProjectSelector is hidden */}
       {hideProjectSelector && (
         <div className="w-full flex justify-end mb-4">
-          <Modal open={openModal} setOpen={setOpenModal} editTask={editTask} />
+          <Modal
+            open={openModal}
+            setOpen={setOpenModal}
+            editTask={editTask}
+            showTriggerButton={false}
+          />
         </div>
       )}
 

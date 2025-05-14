@@ -33,6 +33,9 @@ export const useProjects = () =>
   useQuery({
     queryKey: ["projects"],
     queryFn: () => fetchProjects(),
+    staleTime: 1000, // Consider data stale after 1 second
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
 // Fetch tasks

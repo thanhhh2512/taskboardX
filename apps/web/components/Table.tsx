@@ -385,7 +385,12 @@ export function DataTable<TData, TValue>({
           <ProjectSelector />
         </div>
         <div className="flex items-center gap-2">
-          <Modal open={openModal} setOpen={setOpenModal} editTask={editTask} />
+          <Modal
+            open={openModal}
+            setOpen={setOpenModal}
+            editTask={editTask}
+            showTriggerButton={false}
+          />
 
           {/* Delete Confirmation Dialog */}
           <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>

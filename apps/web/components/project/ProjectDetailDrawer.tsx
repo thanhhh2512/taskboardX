@@ -34,6 +34,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Card } from "@workspace/ui/components/card";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import Modal from "@/components/Modal";
+import { toast } from "sonner";
 
 interface ProjectDetailDrawerProps {
   currentProject: Project | null;
@@ -125,11 +126,20 @@ export const ProjectDetailDrawer = memo(function ProjectDetailDrawer({
 }: ProjectDetailDrawerProps) {
   // Local state for task modal
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  // Local state for members to ensure UI updates
+  const [members, setMembers] = useState<string[]>([]);
 
   // Access project store functions
   const removeUserFromProject = useProjectsStore(
     useCallback((state) => state.removeUserFromProject, [])
   );
+
+  // Update local members state when currentProject changes
+  useEffect(() => {
+    if (currentProject) {
+      setMembers(currentProject.members);
+    }
+  }, [currentProject]);
 
   // Fetch tasks for the current project - use empty string as fallback
   // Always call hooks at the top level, even if currentProject is null
@@ -172,7 +182,17 @@ export const ProjectDetailDrawer = memo(function ProjectDetailDrawer({
   const handleRemoveUser = useCallback(
     (userId: string) => {
       if (currentProject) {
+        // Update Zustand store
         removeUserFromProject(currentProject.id, userId);
+
+        // Update local state immediately for UI update
+        setMembers((prevMembers) => prevMembers.filter((id) => id !== userId));
+
+        // Show success notification
+        toast.success(`Member removed successfully`, {
+          richColors: true,
+          description: "User has been removed from the project",
+        });
       }
     },
     [currentProject, removeUserFromProject]
@@ -232,13 +252,13 @@ export const ProjectDetailDrawer = memo(function ProjectDetailDrawer({
                 </Button>
               </div>
 
-              {currentProject.members.length === 0 ? (
+              {members.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   No team members yet.
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {currentProject.members.map((memberId, index) => (
+                  {members.map((memberId, index) => (
                     <MemberItem
                       key={memberId + index}
                       memberId={memberId}
@@ -329,7 +349,11 @@ export const ProjectDetailDrawer = memo(function ProjectDetailDrawer({
       </Sheet>
 
       {/* Task Creation Modal */}
-      <Modal open={isTaskModalOpen} setOpen={setIsTaskModalOpen} />
+      <Modal
+        open={isTaskModalOpen}
+        setOpen={setIsTaskModalOpen}
+        showTriggerButton={false}
+      />
     </>
   );
 });
