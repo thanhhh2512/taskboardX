@@ -59,9 +59,15 @@ interface ModalProps {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
   editTask?: TaskType | null;
+  showTriggerButton?: boolean;
 }
 
-const Modal = ({ open, setOpen, editTask = null }: ModalProps) => {
+const Modal = ({
+  open,
+  setOpen,
+  editTask = null,
+  showTriggerButton = true,
+}: ModalProps) => {
   const isEditMode = !!editTask;
   const projectId = useProjectStore((state) => state.projectId);
   const addNotification = useNotificationStore(
@@ -185,9 +191,11 @@ const Modal = ({ open, setOpen, editTask = null }: ModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">New Task</Button>
-      </DialogTrigger>
+      {showTriggerButton && (
+        <DialogTrigger asChild>
+          <Button variant="outline">New Task</Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Edit Task" : "New Task"}</DialogTitle>

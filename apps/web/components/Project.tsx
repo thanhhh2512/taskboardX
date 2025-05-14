@@ -18,7 +18,11 @@ import {
   Users,
   ClipboardList,
 } from "lucide-react";
-import { useProjectsStore, Project } from "@/app/hooks/useTaskStore";
+import {
+  useProjectsStore,
+  Project,
+  useProjectStore,
+} from "@/app/hooks/useTaskStore";
 import { useNotificationStore } from "@/app/hooks/useNotificationStore";
 import {
   DropdownMenu,
@@ -117,6 +121,7 @@ export function ProjectList() {
   const updateProject = useProjectsStore((state) => state.updateProject);
   const deleteProject = useProjectsStore((state) => state.deleteProject);
   const addUserToProject = useProjectsStore((state) => state.addUserToProject);
+  const setProjectId = useProjectStore((state) => state.setProjectId);
 
   // Get notification actions
   const addNotification = useNotificationStore(
@@ -159,6 +164,9 @@ export function ProjectList() {
 
   const handleAddProject = () => {
     const newProject = addProject(formData.name, formData.description);
+
+    // Make the new project current in the project store
+    setProjectId(newProject.id);
 
     // Add notification for new project
     addNotification(

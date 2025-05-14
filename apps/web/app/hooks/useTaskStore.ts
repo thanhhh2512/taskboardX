@@ -107,7 +107,11 @@ export const useProjectsStore = create(
 
         set((state) => ({
           projects: [...state.projects, newProject],
+          currentProject: newProject, // Set as current project in this store
         }));
+
+        // Set this new project as the current selected project
+        useProjectStore.getState().setProjectId(newProject.id);
 
         return newProject;
       },
