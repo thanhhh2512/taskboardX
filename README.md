@@ -12,8 +12,6 @@
   <h3>A powerful, modern project management application with a focus on user experience</h3>
 </div>
 
-![TaskBoardX Screenshot](https://via.placeholder.com/800x400?text=TaskBoardX+Screenshot)
-
 ## ✨ Features
 
 - **Project Management**: Create, edit, and organize projects
