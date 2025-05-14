@@ -119,7 +119,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
-
-<div align="center">
-  <p>Made with ❤️ by Your Team</p>
-</div>
