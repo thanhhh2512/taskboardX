@@ -1,4 +1,15 @@
 {
-  "extends": "@workspace/typescript-config/base.json"
+  "extends": "@workspace/typescript-config/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "strict": true,
+    "paths": {
+      "@workspace/types": ["packages/types"],
+      "@workspace/types/*": ["packages/types/*"],
+      "@workspace/ui": ["packages/ui/src"],
+      "@workspace/ui/*": ["packages/ui/src/*"]
+    }
+  },
+  "exclude": ["node_modules"]
 }
 

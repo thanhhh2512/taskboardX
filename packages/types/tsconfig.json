@@ -1,0 +1,12 @@
+{
+  "extends": "@workspace/typescript-config/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist"
+  },
+  "include": ["."],
+  "exclude": ["node_modules", "dist"]
+}
