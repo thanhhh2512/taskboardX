@@ -26,6 +26,9 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
 import { Badge } from "@workspace/ui/components/badge";
+import { useProjectMembers } from "@/app/hooks/useTasksQuery";
+import { useProjectStore } from "@/app/hooks/useTaskStore";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 
 export const columns: ColumnDef<TaskType>[] = [
   {
@@ -137,6 +140,9 @@ export const columns: ColumnDef<TaskType>[] = [
   {
     accessorKey: "assignee",
     header: ({ column }) => {
+      const projectId = useProjectStore((state) => state.projectId);
+      const { data: projectMembers, isLoading } = useProjectMembers(projectId);
+
       return (
         <div className="flex items-center space-x-2">
           <span>Assignee</span>
@@ -156,24 +162,24 @@ export const columns: ColumnDef<TaskType>[] = [
               >
                 All
               </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={column.getFilterValue() === "Alice"}
-                onCheckedChange={() => column.setFilterValue("Alice")}
-              >
-                Alice
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={column.getFilterValue() === "Bob"}
-                onCheckedChange={() => column.setFilterValue("Bob")}
-              >
-                Bob
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={column.getFilterValue() === "Charlie"}
-                onCheckedChange={() => column.setFilterValue("Charlie")}
-              >
-                Charlie
-              </DropdownMenuCheckboxItem>
+              {isLoading ? (
+                <Skeleton className="h-8 w-full" />
+              ) : (
+                (
+                  projectMembers?.members as unknown as {
+                    id: string;
+                    name: string;
+                  }[]
+                )?.map((member) => (
+                  <DropdownMenuCheckboxItem
+                    key={member.id}
+                    checked={column.getFilterValue() === member.name}
+                    onCheckedChange={() => column.setFilterValue(member.name)}
+                  >
+                    {member.name}
+                  </DropdownMenuCheckboxItem>
+                ))
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

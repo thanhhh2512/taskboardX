@@ -1,30 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  fetchTasks,
-  postTask,
-  patchTask,
-  fetchProjects,
-  fetchUsers,
-  removeTask,
-  updateExistingTask,
-  fetchProjectMembers,
-  addUserToProjectApi,
-  removeUserFromProjectApi,
-} from "@/app/api/mock-tasks";
-import { TaskType } from "@workspace/types";
+import { TaskType, TaskPostPayload, Project } from "@workspace/types";
+import { projectApi, taskApi, userApi } from "@/lib/api";
 
 // Fetch Assignees
 export const useAssignees = () =>
   useQuery({
     queryKey: ["assignees"],
-    queryFn: () => fetchUsers(),
+    queryFn: () => userApi.getUsers(),
   });
 
 // Fetch Project Members - only users who are members of the specific project
 export const useProjectMembers = (projectId: string) =>
   useQuery({
     queryKey: ["projectMembers", projectId],
-    queryFn: () => fetchProjectMembers(projectId),
+    queryFn: () => projectApi.getProjectMembers(projectId),
     enabled: !!projectId, // Only run the query if projectId is provided
   });
 
@@ -32,7 +21,12 @@ export const useProjectMembers = (projectId: string) =>
 export const useProjects = () =>
   useQuery({
     queryKey: ["projects"],
-    queryFn: () => fetchProjects(),
+    queryFn: async () => {
+      const response = await projectApi.getProjects();
+      return response;
+    },
+    select: (data) =>
+      (data as unknown as { projects: Project[] }).projects || [],
     staleTime: 1000, // Consider data stale after 1 second
     refetchOnMount: true,
     refetchOnWindowFocus: true,
@@ -42,7 +36,15 @@ export const useProjects = () =>
 export const useTasks = (projectId: string) =>
   useQuery({
     queryKey: ["tasks", projectId],
-    queryFn: () => fetchTasks(projectId),
+    queryFn: async () => {
+      if (!projectId) {
+        return { tasks: [] };
+      }
+
+      const response = await projectApi.getProjectTasks(projectId);
+      return response;
+    },
+    select: (data) => (data as unknown as { tasks: TaskType[] }).tasks || [],
   });
 
 // Add user to project
@@ -50,7 +52,13 @@ export const useAddUserToProject = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: addUserToProjectApi,
+    mutationFn: ({
+      projectId,
+      userId,
+    }: {
+      projectId: string;
+      userId: string;
+    }) => projectApi.addUserToProject(projectId, userId),
     onSuccess: (_, variables) => {
       // Invalidate project members cache to reflect the new user
       queryClient.invalidateQueries({
@@ -65,7 +73,13 @@ export const useRemoveUserFromProject = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: removeUserFromProjectApi,
+    mutationFn: ({
+      projectId,
+      userId,
+    }: {
+      projectId: string;
+      userId: string;
+    }) => projectApi.removeUserFromProject(projectId, userId),
     onSuccess: (_, variables) => {
       // Invalidate project members cache to reflect the removal
       queryClient.invalidateQueries({
@@ -80,16 +94,8 @@ export const useCreateTask = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: postTask,
-    onMutate: (newTask) => {
-      queryClient.setQueryData(
-        ["tasks", newTask.projectId],
-        (oldTasks: any) => {
-          return [...(oldTasks || []), newTask];
-        }
-      );
-    },
-    onSuccess: (newTask, variables) => {
+    mutationFn: taskApi.createTask,
+    onSuccess: (response, variables) => {
       // Update cache
       queryClient.invalidateQueries({
         queryKey: ["tasks", variables.projectId],
@@ -98,25 +104,21 @@ export const useCreateTask = () => {
   });
 };
 
-// Update task
+// Update task status
 export const useUpdateTaskStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: patchTask,
-    onMutate: (updatedTask) => {
-      queryClient.setQueryData(
-        ["tasks", updatedTask.projectId],
-        (oldTasks: any) => {
-          return oldTasks.map((task: any) =>
-            task.id === updatedTask.taskId
-              ? { ...task, status: updatedTask.status }
-              : task
-          );
-        }
-      );
-    },
-    onSuccess: (updatedTask, variables) => {
+    mutationFn: ({
+      taskId,
+      status,
+      projectId,
+    }: {
+      taskId: string;
+      status: string;
+      projectId: string;
+    }) => taskApi.updateTaskStatus(taskId, projectId, status as any),
+    onSuccess: (response, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["tasks", variables.projectId],
       });
@@ -129,26 +131,26 @@ export const useUpdateTask = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: updateExistingTask,
+    mutationFn: (updatedTask: TaskPostPayload & { id: string }) =>
+      taskApi.updateTask(updatedTask.id, updatedTask),
     onMutate: async (updatedTask) => {
-      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         queryKey: ["tasks", updatedTask.projectId],
       });
 
       // Snapshot the previous value
-      const previousTasks = queryClient.getQueryData<TaskType[]>([
+      const previousTasks = queryClient.getQueryData([
         "tasks",
         updatedTask.projectId,
       ]);
 
       // Optimistically update to the new value
-      queryClient.setQueryData(
-        ["tasks", updatedTask.projectId],
-        (oldTasks: TaskType[] | undefined) => {
-          if (!oldTasks) return [];
-
-          return oldTasks.map((task) =>
+      queryClient.setQueryData(["tasks", updatedTask.projectId], (old: any) => {
+        const tasks = old?.tasks || [];
+        return {
+          ...old,
+          tasks: tasks.map((task: TaskType) =>
             task.id === updatedTask.id
               ? {
                   ...task,
@@ -157,18 +159,16 @@ export const useUpdateTask = () => {
                   status: updatedTask.status,
                   assignee: {
                     id: updatedTask.assigneeId,
-                    name:
-                      oldTasks.find((t) => t.id === updatedTask.id)?.assignee
-                        ?.name || "",
+                    name: task.assignee?.name || "", // Keep existing name until refetch
                   },
                   dueDate: updatedTask.dueDate,
                 }
               : task
-          );
-        }
-      );
+          ),
+        };
+      });
 
-      // Return a context object with the previous tasks
+      // Return a context object with the snapshotted value
       return { previousTasks };
     },
     onError: (err, updatedTask, context) => {
@@ -180,7 +180,7 @@ export const useUpdateTask = () => {
         );
       }
     },
-    onSuccess: (updatedTask, variables) => {
+    onSuccess: (response, variables) => {
       // Invalidate and refetch on success
       queryClient.invalidateQueries({
         queryKey: ["tasks", variables.projectId],
@@ -200,18 +200,14 @@ export const useDeleteTask = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: removeTask,
-    onMutate: (deleteParams) => {
-      queryClient.setQueryData(
-        ["tasks", deleteParams.projectId],
-        (oldTasks: any) => {
-          return oldTasks.filter(
-            (task: any) => task.id !== deleteParams.taskId
-          );
-        }
-      );
-    },
-    onSuccess: (result, variables) => {
+    mutationFn: ({
+      taskId,
+      projectId,
+    }: {
+      taskId: string;
+      projectId: string;
+    }) => taskApi.deleteTask(taskId),
+    onSuccess: (response, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["tasks", variables.projectId],
       });

@@ -30,6 +30,7 @@ import {
   AlertTitle,
 } from "@workspace/ui/components/alert";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { User } from "@workspace/types";
 
 // Define validation schemas
 const projectSchema = z.object({
@@ -81,6 +82,7 @@ interface ProjectDialogsProps {
   handleDeleteProject: () => void;
   handleAddUserToProject: () => void;
   resetForm: () => void;
+  isActionPending: boolean;
 }
 
 export function ProjectDialogs({
@@ -104,6 +106,7 @@ export function ProjectDialogs({
   handleDeleteProject,
   handleAddUserToProject,
   resetForm,
+  isActionPending,
 }: ProjectDialogsProps) {
   // Fetch all available users
   const { data: allUsers, isLoading: isLoadingUsers } = useAssignees();
@@ -134,7 +137,7 @@ export function ProjectDialogs({
       userIdSchema.parse(userId);
 
       // Check if user exists
-      const userExists = allUsers?.some((user) => user.id === userId);
+      const userExists = allUsers?.some((user: User) => user.id === userId);
       if (!userExists) {
         setErrors({
           ...errors,
@@ -186,7 +189,7 @@ export function ProjectDialogs({
 
   // Filter out users that are already members of the project
   const filteredUsers = allUsers?.filter(
-    (user) => !currentProject?.members.includes(user.id)
+    (user: User) => !currentProject?.members.includes(user.id)
   );
 
   return (
@@ -264,8 +267,12 @@ export function ProjectDialogs({
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" onClick={onAddProject}>
-              Create Project
+            <Button
+              type="submit"
+              onClick={onAddProject}
+              disabled={isActionPending}
+            >
+              {isActionPending ? "Creating..." : "Create Project"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -345,9 +352,9 @@ export function ProjectDialogs({
             <Button
               type="submit"
               onClick={onEditProject}
-              disabled={!formData.name.trim()}
+              disabled={!formData.name.trim() || isActionPending}
             >
-              Save Changes
+              {isActionPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -367,11 +374,16 @@ export function ProjectDialogs({
             <Button
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isActionPending}
             >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteProject}>
-              Delete
+            <Button
+              variant="destructive"
+              onClick={handleDeleteProject}
+              disabled={isActionPending}
+            >
+              {isActionPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -403,7 +415,7 @@ export function ProjectDialogs({
               <Skeleton className="h-4 w-24" />
             </div>
           ) : filteredUsers && filteredUsers.length === 0 ? (
-            <Alert variant="warning" className="my-4">
+            <Alert variant="default" className="my-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>All users already added</AlertTitle>
               <AlertDescription>
@@ -440,12 +452,12 @@ export function ProjectDialogs({
                 </div>
               </div>
 
-              <Alert variant="info" className="mt-2">
+              <Alert variant="default" className="mt-2">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Available Users</AlertTitle>
                 <AlertDescription>
                   <div className="mt-2 text-sm">
-                    {allUsers?.map((user) => (
+                    {allUsers?.map((user: User) => (
                       <div key={user.id} className="mb-1">
                         <code className="bg-muted px-1 py-0.5 rounded">
                           {user.id}
@@ -473,9 +485,9 @@ export function ProjectDialogs({
             <Button
               type="submit"
               onClick={onAddUserToProject}
-              disabled={!userId.trim() || isLoadingUsers}
+              disabled={!userId.trim() || isLoadingUsers || isActionPending}
             >
-              Add User
+              {isActionPending ? "Adding..." : "Add User"}
             </Button>
           </DialogFooter>
         </DialogContent>

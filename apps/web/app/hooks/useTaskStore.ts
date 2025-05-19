@@ -1,11 +1,52 @@
 import { create } from "zustand";
 import { combine } from "zustand/middleware";
-import { Project as ProjectType } from "@workspace/types";
-import {
-  fetchProjects,
-  fetchTasks,
-  mockProjectMembers,
-} from "@/app/api/mock-tasks";
+import { Project as ProjectType, User } from "@workspace/types";
+import { projectApi, taskApi } from "@/lib/api";
+
+// API Response Types
+interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  success?: boolean;
+}
+
+interface ProjectResponse {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  members: string[];
+  taskCount: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+interface ProjectsResponse {
+  projects: ProjectResponse[];
+}
+
+interface TasksResponse {
+  tasks: Array<{
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    dueDate: string;
+    assignee?: {
+      id: string;
+      name: string;
+    };
+  }>;
+}
+
+interface MembersResponse {
+  members: Array<{
+    id: string;
+    name: string;
+    role: string;
+    avatar: string;
+  }>;
+}
 
 // Project type definition for extended functionality
 export type Project = {
@@ -14,6 +55,10 @@ export type Project = {
   description: string;
   taskCount: number;
   members: string[]; // IDs of users assigned to this project
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+  createdAt?: string;
 };
 
 // Basic project store just for project ID selection (keeping for backward compatibility)
@@ -48,23 +93,40 @@ export const useProjectsStore = create(
       initializeProjects: async () => {
         try {
           // Fetch projects from the API
-          const apiProjects = await fetchProjects();
+          const response = await projectApi.getProjects();
+          console.log("Fetched projects:", response);
+          const apiProjects =
+            (response as unknown as ProjectsResponse).projects || [];
 
           // Transform ProjectType to our extended Project type
           const enhancedProjects: Project[] = await Promise.all(
-            apiProjects.map(async (project: ProjectType) => {
+            apiProjects.map(async (project: ProjectResponse) => {
+              console.log("Project from API:", project);
               // Fetch tasks for each project to get the count
-              const tasks = await fetchTasks(project.id);
+              const tasksResponse = await projectApi.getProjectTasks(
+                project.id
+              );
+              const tasks =
+                (tasksResponse as unknown as TasksResponse).tasks || [];
 
-              // Get member IDs from mock data (in a real app, this would be part of the API response)
-              const members = mockProjectMembers[project.id] || [];
+              // Get members from API
+              const membersResponse = await projectApi.getProjectMembers(
+                project.id
+              );
+              const members =
+                (membersResponse as unknown as MembersResponse).members?.map(
+                  (member) => member.id
+                ) || [];
 
               return {
                 id: project.id,
                 name: project.name,
-                description: "", // API projects might not have description
+                description: project.description || "",
                 taskCount: tasks.length,
-                members: members, // Initialize with members from mock data
+                members: members,
+                startDate: project.startDate,
+                endDate: project.endDate,
+                createdAt: project.createdAt,
               };
             })
           );
@@ -96,105 +158,193 @@ export const useProjectsStore = create(
       },
 
       // Add new project
-      addProject: (name: string, description: string) => {
-        const newProject: Project = {
-          id: Math.random().toString(36).substring(7), // Generate random ID
-          name,
-          description,
-          taskCount: 0,
-          members: [],
-        };
+      addProject: async (name: string, description: string) => {
+        try {
+          // Create project through API
+          const response = await projectApi.createProject({
+            name,
+            description,
+          });
+          console.log("Created project:", response);
+          if (!response) {
+            throw new Error("Failed to create project");
+          }
 
-        set((state) => ({
-          projects: [...state.projects, newProject],
-          currentProject: newProject, // Set as current project in this store
-        }));
+          const projectData = response as unknown as ProjectResponse;
+          const newProject: Project = {
+            id: projectData.id,
+            name: projectData.name,
+            description: projectData.description || description,
+            taskCount: projectData.taskCount,
+            members: projectData.members,
+            startDate: projectData.startDate,
+            endDate: projectData.endDate,
+            createdAt: projectData.createdAt,
+          };
 
-        // Set this new project as the current selected project
-        useProjectStore.getState().setProjectId(newProject.id);
+          set((state) => ({
+            projects: [...state.projects, newProject],
+            currentProject: newProject,
+          }));
 
-        return newProject;
+          useProjectStore.getState().setProjectId(newProject.id);
+
+          return newProject;
+        } catch (error) {
+          console.error("Failed to create project:", error);
+          throw error;
+        }
       },
 
       // Update existing project
-      updateProject: (id: string, updates: Partial<Omit<Project, "id">>) => {
-        set((state) => ({
-          projects: state.projects.map((project) =>
-            project.id === id ? { ...project, ...updates } : project
-          ),
-        }));
+      updateProject: async (
+        id: string,
+        updates: Partial<Omit<Project, "id">>
+      ) => {
+        try {
+          // Update project through API
+          const response = await projectApi.updateProject(id, updates);
+
+          if (!response) {
+            throw new Error("Failed to update project");
+          }
+
+          const projectData = response as unknown as ProjectResponse;
+          set((state) => ({
+            projects: state.projects.map((project) =>
+              project.id === id
+                ? {
+                    ...project,
+                    ...updates,
+                    name: projectData.name,
+                    description: projectData.description || project.description,
+                    startDate: projectData.startDate,
+                    endDate: projectData.endDate,
+                    createdAt: projectData.createdAt,
+                  }
+                : project
+            ),
+          }));
+        } catch (error) {
+          console.error("Failed to update project:", error);
+          throw error;
+        }
       },
 
       // Delete project
-      deleteProject: (id: string) => {
-        set((state) => ({
-          projects: state.projects.filter((project) => project.id !== id),
-        }));
+      deleteProject: async (id: string) => {
+        try {
+          // Delete project through API
+          const response = await projectApi.deleteProject(id);
 
-        // If the deleted project was the current project, reset selection
-        if (useProjectStore.getState().projectId === id) {
-          const remainingProjects = get().projects.filter((p) => p.id !== id);
-          if (remainingProjects.length > 0) {
-            const firstRemainingProject = remainingProjects[0];
-            if (firstRemainingProject) {
-              useProjectStore.getState().setProjectId(firstRemainingProject.id);
-            }
-          } else {
-            useProjectStore.getState().setProjectId("");
+          if (
+            !response ||
+            !(response as unknown as ApiResponse<{ success: boolean }>).success
+          ) {
+            throw new Error("Failed to delete project");
           }
+
+          set((state) => ({
+            projects: state.projects.filter((project) => project.id !== id),
+          }));
+
+          // If the deleted project was the current project, reset selection
+          if (useProjectStore.getState().projectId === id) {
+            const remainingProjects = get().projects.filter((p) => p.id !== id);
+            if (remainingProjects.length > 0) {
+              const firstRemainingProject = remainingProjects[0];
+              if (firstRemainingProject) {
+                useProjectStore
+                  .getState()
+                  .setProjectId(firstRemainingProject.id);
+              }
+            } else {
+              useProjectStore.getState().setProjectId("");
+            }
+          }
+        } catch (error) {
+          console.error("Failed to delete project:", error);
+          throw error;
         }
       },
 
       // Add user to project
-      addUserToProject: (projectId: string, userId: string) => {
-        // Update mock data directly (in a real app, this would be an API call)
-        if (!mockProjectMembers[projectId]) {
-          mockProjectMembers[projectId] = [];
-        }
+      addUserToProject: async (projectId: string, userId: string) => {
+        try {
+          // Add user to project through API
+          const response = await projectApi.addUserToProject(projectId, userId);
 
-        // Only add if not already a member
-        if (!mockProjectMembers[projectId].includes(userId)) {
-          mockProjectMembers[projectId].push(userId);
-        }
+          if (
+            !response ||
+            !(response as unknown as ApiResponse<{ success: boolean }>).success
+          ) {
+            throw new Error("Failed to add user to project");
+          }
 
-        // Update local state
-        set((state) => ({
-          projects: state.projects.map((project) => {
-            if (project.id === projectId) {
-              // Only add if not already a member
-              if (!project.members.includes(userId)) {
+          // Get updated members from API
+          const membersResponse = await projectApi.getProjectMembers(projectId);
+          const members =
+            (membersResponse as unknown as MembersResponse).members?.map(
+              (member) => member.id
+            ) || [];
+
+          // Update local state with fresh data
+          set((state) => ({
+            projects: state.projects.map((project) => {
+              if (project.id === projectId) {
                 return {
                   ...project,
-                  members: [...project.members, userId],
+                  members: members,
                 };
               }
-            }
-            return project;
-          }),
-        }));
+              return project;
+            }),
+          }));
+        } catch (error) {
+          console.error("Failed to add user to project:", error);
+          throw error;
+        }
       },
 
       // Remove user from project
-      removeUserFromProject: (projectId: string, userId: string) => {
-        // Update mock data directly (in a real app, this would be an API call)
-        if (mockProjectMembers[projectId]) {
-          mockProjectMembers[projectId] = mockProjectMembers[projectId].filter(
-            (id) => id !== userId
+      removeUserFromProject: async (projectId: string, userId: string) => {
+        try {
+          // Remove user from project through API
+          const response = await projectApi.removeUserFromProject(
+            projectId,
+            userId
           );
-        }
 
-        // Update local state
-        set((state) => ({
-          projects: state.projects.map((project) => {
-            if (project.id === projectId) {
-              return {
-                ...project,
-                members: project.members.filter((id) => id !== userId),
-              };
-            }
-            return project;
-          }),
-        }));
+          if (
+            !response ||
+            !(response as unknown as ApiResponse<{ success: boolean }>).success
+          ) {
+            throw new Error("Failed to remove user from project");
+          }
+
+          // Get updated members from API
+          const membersResponse = await projectApi.getProjectMembers(projectId);
+          const members =
+            (membersResponse as unknown as MembersResponse).members?.map(
+              (member) => member.id
+            ) || [];
+
+          // Update local state with fresh data
+          set((state) => ({
+            projects: state.projects.map((project) => {
+              if (project.id === projectId) {
+                return {
+                  ...project,
+                  members: members,
+                };
+              }
+              return project;
+            }),
+          }));
+        } catch (error) {
+          console.error("Failed to remove user from project:", error);
+          throw error;
+        }
       },
 
       // Set the current project
@@ -229,62 +379,88 @@ export const useProjectsStore = create(
 
       // Sync task counts with current API data
       syncTaskCounts: async () => {
-        const projects = get().projects;
+        try {
+          const projects = get().projects;
 
-        const updatedProjects = await Promise.all(
-          projects.map(async (project) => {
-            const tasks = await fetchTasks(project.id);
-            return {
-              ...project,
-              taskCount: tasks.length,
-            };
-          })
-        );
+          const updatedProjects = await Promise.all(
+            projects.map(async (project) => {
+              const response = await projectApi.getProjectTasks(project.id);
+              const tasks = (response as unknown as TasksResponse).tasks || [];
+              return {
+                ...project,
+                taskCount: tasks.length,
+              };
+            })
+          );
 
-        set({ projects: updatedProjects });
+          set({ projects: updatedProjects });
+        } catch (error) {
+          console.error("Failed to sync task counts:", error);
+        }
       },
 
-      // Sync project members with mock API data
-      syncProjectMembers: () => {
-        set((state) => ({
-          projects: state.projects.map((project) => ({
-            ...project,
-            members: mockProjectMembers[project.id] || [],
-          })),
-        }));
+      // Sync project members with API data
+      syncProjectMembers: async () => {
+        try {
+          const projects = get().projects;
+
+          const updatedProjects = await Promise.all(
+            projects.map(async (project) => {
+              const response = await projectApi.getProjectMembers(project.id);
+              const members =
+                (response as unknown as MembersResponse).members?.map(
+                  (member) => member.id
+                ) || [];
+              return {
+                ...project,
+                members: members,
+              };
+            })
+          );
+
+          set({ projects: updatedProjects });
+        } catch (error) {
+          console.error("Failed to sync project members:", error);
+        }
       },
 
       // Add multiple users to project
-      addUsersToProject: (projectId: string, userIds: string[]) => {
-        // Update mock data first
-        if (!mockProjectMembers[projectId]) {
-          mockProjectMembers[projectId] = [];
-        }
-
-        // Add each user to mock data if not already a member
-        userIds.forEach((userId) => {
-          if (
-            mockProjectMembers[projectId] &&
-            !mockProjectMembers[projectId].includes(userId)
-          ) {
-            mockProjectMembers[projectId]?.push(userId);
+      addUsersToProject: async (projectId: string, userIds: string[]) => {
+        try {
+          // Add users one by one using the existing API
+          for (const userId of userIds) {
+            await projectApi.addUserToProject(projectId, userId);
           }
-        });
 
-        // Update local state
-        set((state) => ({
-          projects: state.projects.map((project) => {
-            if (project.id === projectId) {
-              // Use a Set to ensure no duplicates
-              const updatedMembers = new Set([...project.members, ...userIds]);
-              return {
-                ...project,
-                members: Array.from(updatedMembers),
-              };
-            }
-            return project;
-          }),
-        }));
+          // Get updated members from API
+          const membersResponse = await projectApi.getProjectMembers(projectId);
+          const members =
+            (membersResponse as unknown as MembersResponse).members?.map(
+              (member) => member.id
+            ) || [];
+
+          // Update local state with fresh data
+          set((state) => ({
+            projects: state.projects.map((project) => {
+              if (project.id === projectId) {
+                return {
+                  ...project,
+                  members: members,
+                };
+              }
+              return project;
+            }),
+          }));
+        } catch (error) {
+          console.error("Failed to add users to project:", error);
+          throw error;
+        }
+      },
+
+      // Get project members for assignee selection
+      getProjectMembersForAssignee: (projectId: string) => {
+        const project = get().projects.find((p) => p.id === projectId);
+        return project?.members || [];
       },
     })
   )

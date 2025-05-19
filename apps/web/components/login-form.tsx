@@ -7,16 +7,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { cn } from "@workspace/ui/lib/utils";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
+import { login } from "@/lib/auth";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid Email" }),
   password: z.string().min(8, { message: "Password at least 8 characters" }),
 });
+
+type FormData = z.infer<typeof formSchema>;
 
 export function LoginForm({ className, ...props }: { className?: string }) {
   const router = useRouter();
@@ -30,9 +34,23 @@ export function LoginForm({ className, ...props }: { className?: string }) {
     resolver: zodResolver(formSchema),
   });
 
-  const onSubmit = async (data: any) => {
-    console.log("Đăng nhập:", data);
-    router.push("/");
+  const onSubmit = async (data: FormData) => {
+    try {
+      // Call the actual login API
+      await login(data.email, data.password);
+
+      toast.success("Login successful!");
+
+      // Redirect to dashboard
+      router.push("/");
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Invalid email or password. Please try again."
+      );
+    }
   };
 
   return (

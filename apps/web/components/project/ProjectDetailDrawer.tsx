@@ -35,6 +35,8 @@ import { Card } from "@workspace/ui/components/card";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import Modal from "@/components/Modal";
 import { toast } from "sonner";
+import { useProjectMembers } from "@/app/hooks/useProjectMembers";
+import type { ProjectMember } from "@/app/hooks/useProjectMembers";
 
 interface ProjectDetailDrawerProps {
   currentProject: Project | null;
@@ -42,17 +44,10 @@ interface ProjectDetailDrawerProps {
   setIsOpen: (open: boolean) => void;
   openEditDialog: (project: Project) => void;
   openAddUserDialog: (project: Project) => void;
-  getMockUserDetails: (userId: string) => {
-    name: string;
-    avatar?: string;
-    role: string;
-  };
 }
 
-// Memoized task card component to prevent unnecessary re-renders
 const TaskCard = memo(({ task, getStatusInfo }: any) => {
   const status = getStatusInfo(task.status);
-
   return (
     <Card key={task.id} className="p-3">
       <div className="flex justify-between items-start">
@@ -87,32 +82,38 @@ const TaskCard = memo(({ task, getStatusInfo }: any) => {
 TaskCard.displayName = "TaskCard";
 
 // Memoized member item component
-const MemberItem = memo(({ memberId, getMockUserDetails, onRemove }: any) => {
-  const user = getMockUserDetails(memberId);
-
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center">
-        <Avatar className="h-8 w-8 mr-3">
-          <AvatarImage src={user.avatar} alt={user.name} />
-          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-        </Avatar>
-        <div>
-          <p className="text-sm font-medium">{user.name}</p>
-          <p className="text-xs text-gray-500">{user.role}</p>
+const MemberItem = memo(
+  ({
+    member,
+    onRemove,
+  }: {
+    member: ProjectMember;
+    onRemove: (id: string) => void;
+  }) => {
+    return (
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <Avatar className="h-8 w-8 mr-3">
+            <AvatarImage src={member.avatar} alt={member.name} />
+            <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-sm font-medium">{member.name}</p>
+            <p className="text-xs text-gray-500">{member.role}</p>
+          </div>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-gray-500 hover:text-red-500"
+          onClick={() => onRemove(member.id)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 text-gray-500 hover:text-red-500"
-        onClick={() => onRemove(memberId)}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </div>
-  );
-});
+    );
+  }
+);
 
 MemberItem.displayName = "MemberItem";
 
@@ -122,27 +123,22 @@ export const ProjectDetailDrawer = memo(function ProjectDetailDrawer({
   setIsOpen,
   openEditDialog,
   openAddUserDialog,
-  getMockUserDetails,
 }: ProjectDetailDrawerProps) {
   // Local state for task modal
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  // Local state for members to ensure UI updates
-  const [members, setMembers] = useState<string[]>([]);
+
+  // Use the new hook to fetch members
+  const { data: membersData, isLoading: isLoadingMembers } = useProjectMembers(
+    currentProject?.id || ""
+  );
+  const members = membersData?.members || [];
 
   // Access project store functions
   const removeUserFromProject = useProjectsStore(
     useCallback((state) => state.removeUserFromProject, [])
   );
 
-  // Update local members state when currentProject changes
-  useEffect(() => {
-    if (currentProject) {
-      setMembers(currentProject.members);
-    }
-  }, [currentProject]);
-
-  // Fetch tasks for the current project - use empty string as fallback
-  // Always call hooks at the top level, even if currentProject is null
+  // Fetch tasks for the current project
   const projectId = currentProject?.id || "";
   const { data: tasks, isLoading: isLoadingTasks } = useTasks(projectId);
 
@@ -184,9 +180,6 @@ export const ProjectDetailDrawer = memo(function ProjectDetailDrawer({
       if (currentProject) {
         // Update Zustand store
         removeUserFromProject(currentProject.id, userId);
-
-        // Update local state immediately for UI update
-        setMembers((prevMembers) => prevMembers.filter((id) => id !== userId));
 
         // Show success notification
         toast.success(`Member removed successfully`, {
@@ -252,17 +245,31 @@ export const ProjectDetailDrawer = memo(function ProjectDetailDrawer({
                 </Button>
               </div>
 
-              {members.length === 0 ? (
+              {isLoadingMembers ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Skeleton className="h-8 w-8 rounded-full mr-3" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-3 w-16" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  ))}
+                </div>
+              ) : members.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   No team members yet.
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {members.map((memberId, index) => (
+                  {members.map((member) => (
                     <MemberItem
-                      key={memberId + index}
-                      memberId={memberId}
-                      getMockUserDetails={getMockUserDetails}
+                      key={member.id}
+                      member={member}
                       onRemove={handleRemoveUser}
                     />
                   ))}
@@ -309,13 +316,14 @@ export const ProjectDetailDrawer = memo(function ProjectDetailDrawer({
                 </div>
               ) : (
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                  {tasks.map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      getStatusInfo={getStatusInfo}
-                    />
-                  ))}
+                  {Array.isArray(tasks) &&
+                    tasks.map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        getStatusInfo={getStatusInfo}
+                      />
+                    ))}
                 </div>
               )}
             </div>
