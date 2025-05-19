@@ -41,6 +41,7 @@ const userProfileSchema = z.object({
     .string()
     .min(1, "Role is required")
     .max(100, "Role must be less than 100 characters"),
+  email: z.string().min(1, "Email is required").email("Invalid email format"),
   skills: z.string().optional(),
   avatar: z.string().optional(),
 });
@@ -50,12 +51,14 @@ export function UserProfile() {
   const [formData, setFormData] = useState({
     name: "",
     role: "",
+    email: "",
     skills: "",
     avatar: "",
   });
   const [errors, setErrors] = useState<{
     name?: string;
     role?: string;
+    email?: string;
     skills?: string;
     avatar?: string;
   }>({});
@@ -81,6 +84,7 @@ export function UserProfile() {
       setFormData({
         name: user.name,
         role: user.role,
+        email: user.email,
         skills: Array.isArray(user.skills) ? user.skills.join(", ") : "",
         avatar: user.avatar || "",
       });
@@ -120,7 +124,6 @@ export function UserProfile() {
     const previewUrl = URL.createObjectURL(file);
     setPreviewAvatar(previewUrl);
 
-    
     const reader = new FileReader();
     reader.onload = (event) => {
       const base64String = event.target?.result as string;
@@ -190,9 +193,9 @@ export function UserProfile() {
       await updateUser({
         name: formData.name,
         role: formData.role,
+        email: formData.email,
       });
 
-   
       if (formData.avatar && formData.avatar.startsWith("data:image")) {
         await updateAvatar(formData.avatar);
       }
@@ -227,6 +230,7 @@ export function UserProfile() {
     setFormData({
       name: user.name,
       role: user.role,
+      email: user.email,
       skills: user.skills.join(", "),
       avatar: user.avatar || "",
     });
@@ -270,24 +274,49 @@ export function UserProfile() {
             </div>
 
             {/* Profile Info */}
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold mb-2 dark:text-white text-center sm:text-left">
-                {user.name}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 text-center sm:text-left">
-                {user.role}
-              </p>
+            <div className="flex-1 bg-white dark:bg-gray-900 ">
+              {/* Email & Name */}
+              <div className="mb-4 text-center sm:text-left">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+                  {user.name}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {user.email}
+                </p>
+              </div>
 
-              <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
-                {Array.isArray(user.skills) && user.skills.length > 0 ? (
-                  user.skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">No skills added yet</p>
-                )}
+              {/* Role */}
+              <div className="mb-4 flex gap-4 items-center">
+                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-300  tracking-wider mb-1">
+                  Role:
+                </h4>
+                <p className="text-base mb-1 text-gray-800 dark:text-white">
+                  {user.role}
+                </p>
+              </div>
+
+              {/* Skills */}
+              <div className="mb-4 flex gap-4 items-center">
+                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-300  tracking-wider mb-2">
+                  Skills:
+                </h4>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {Array.isArray(user.skills) && user.skills.length > 0 ? (
+                    user.skills.map((skill, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="text-sm px-3 py-1"
+                      >
+                        {skill}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      No skills added yet
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -462,6 +491,34 @@ export function UserProfile() {
                 {errors.role && (
                   <p className="text-sm font-medium text-red-500">
                     {errors.role}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email <span className="text-red-500">*</span>
+              </Label>
+              <div className="col-span-3 space-y-1">
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  onBlur={() => {
+                    if (!formData.email.trim()) {
+                      setErrors({
+                        ...errors,
+                        email: "Email is required",
+                      });
+                    }
+                  }}
+                  className={errors.email ? "border-red-500" : ""}
+                />
+                {errors.email && (
+                  <p className="text-sm font-medium text-red-500">
+                    {errors.email}
                   </p>
                 )}
               </div>
