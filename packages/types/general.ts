@@ -6,6 +6,7 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 
 // API response types
 export interface ApiResponse<T> {
+  members: ApiResponse<import("e:/CODE/taskboardx/packages/types/user").User[]> | undefined;
   data?: T;
   error?: string;
   message?: string;

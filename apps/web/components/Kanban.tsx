@@ -14,7 +14,7 @@ import { Task } from "./Task";
 import { Column } from "./Column";
 import { ColumnType, Project, TaskStatus, TaskType } from "@workspace/types";
 import Modal from "./Modal";
-import { useUpdateTaskStatus } from "@/app/hooks/useTasksQuery";
+import { useUpdateTask } from "@/app/hooks/useTasksQuery";
 import { useProjectStore } from "@/app/hooks/useTaskStore";
 import ProjectSelector from "./ProjectSelector";
 import { useMediaQuery } from "@/app/hooks/useMediaQuery";
@@ -91,7 +91,7 @@ const Kanban = ({
   isLoading: boolean;
   hideProjectSelector?: boolean;
 }) => {
-  const updateStatus = useUpdateTaskStatus();
+  const updateTask = useUpdateTask();
   const projectId = useProjectStore((state) => state.projectId);
   const [openModal, setOpenModal] = useState(false);
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
@@ -163,7 +163,7 @@ const Kanban = ({
         (column) => column.id === overColumnId
       );
 
-      if (!sourceColumn || !destinationColumn) {
+      if (!sourceColumn || !destinationColumn || !activeTask) {
         setActiveTask(null);
         return;
       }
@@ -174,11 +174,15 @@ const Kanban = ({
       }
 
       // Update the task status
-      updateStatus.mutate(
+      updateTask.mutate(
         {
-          taskId: activeTaskId,
+          id: activeTaskId,
+          title: activeTask.title,
+          description: activeTask.description ?? "",
           status: overColumnId,
           projectId: projectId,
+          assigneeId: activeTask.assignee?.id || "",
+          dueDate: activeTask.dueDate || "",
         },
         {
           onSuccess: () => {
@@ -195,7 +199,7 @@ const Kanban = ({
       );
       setActiveTask(null);
     },
-    [activeTask, projectId, updateStatus]
+    [activeTask, projectId, updateTask]
   );
 
   // Handle edit task

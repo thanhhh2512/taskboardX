@@ -10,11 +10,18 @@ import { DataTable } from "./Table";
 import { columns } from "./tablecolumn";
 import { useProjects, useTasks } from "@/app/hooks/useTasksQuery";
 import { useProjectStore } from "@/app/hooks/useTaskStore";
+import { TaskType } from "@workspace/types";
 
-const TaskCard = () => {
+interface TaskCardProps {
+  hideProjectSelector?: boolean;
+  customTasks?: TaskType[];
+}
+
+const TaskCard = ({ hideProjectSelector = false, customTasks }: TaskCardProps) => {
   const projectId = useProjectStore((state) => state.projectId);
-
   const { data: tasks, isLoading } = useTasks(projectId);
+
+  const displayTasks = customTasks || tasks || [];
 
   return (
     <div className="h-full w-full flex flex-col gap-4 p-4 bg-white dark:bg-gray-900 rounded-lg shadow-sm">
@@ -39,10 +46,14 @@ const TaskCard = () => {
           </TabsList>
         </div>
         <TabsContent value="kanban">
-          <Kanban tasks={tasks || []} isLoading={isLoading} />
+          <Kanban 
+            tasks={displayTasks} 
+            isLoading={isLoading && !customTasks} 
+            hideProjectSelector={hideProjectSelector} 
+          />
         </TabsContent>
         <TabsContent value="table">
-          <DataTable columns={columns} data={tasks || []} />
+          <DataTable columns={columns} data={displayTasks} />
         </TabsContent>
       </Tabs>
     </div>

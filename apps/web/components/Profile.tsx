@@ -25,10 +25,11 @@ import {
 } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Pencil, Upload, X } from "lucide-react";
-import { useUserStore, User } from "@/app/hooks/useUserStore";
+import { useUserStore } from "@/app/hooks/useUserStore";
 import { z } from "zod";
-import { Skeleton } from "@workspace/ui/components/skeleton";
 import { toast } from "sonner";
+// Import skeletons from loading.tsx
+import { ProfileSkeleton, StatsSkeleton } from "@/app/(home)/loading";
 
 // Define validation schema
 const userProfileSchema = z.object({
@@ -43,54 +44,6 @@ const userProfileSchema = z.object({
   skills: z.string().optional(),
   avatar: z.string().optional(),
 });
-
-// Skeleton components
-function ProfileSkeleton() {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-          {/* Profile Image Skeleton */}
-          <div className="relative">
-            <Skeleton className="w-32 h-32 rounded-full" />
-          </div>
-
-          {/* Profile Info Skeleton */}
-          <div className="flex-1">
-            <Skeleton className="h-7 w-48 mb-2 mx-auto sm:mx-0" />
-            <Skeleton className="h-5 w-32 mb-4 mx-auto sm:mx-0" />
-
-            <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
-              <Skeleton className="h-6 w-16" />
-              <Skeleton className="h-6 w-20" />
-              <Skeleton className="h-6 w-14" />
-            </div>
-          </div>
-
-          <Skeleton className="h-9 w-32 mt-4 sm:mt-0" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function StatsSkeleton() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-      {[1, 2, 3].map((i) => (
-        <Card key={i}>
-          <CardHeader>
-            <Skeleton className="h-6 w-24" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-10 w-16 mb-2" />
-            <Skeleton className="h-4 w-32" />
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
 
 export function UserProfile() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -115,7 +68,6 @@ export function UserProfile() {
   const updateUser = useUserStore((state) => state.updateUser);
   const updateSkills = useUserStore((state) => state.updateSkills);
   const updateAvatar = useUserStore((state) => state.updateAvatar);
-
   // Initialize user on component mount
   useEffect(() => {
     if (isLoading) {
@@ -129,7 +81,7 @@ export function UserProfile() {
       setFormData({
         name: user.name,
         role: user.role,
-        skills: user.skills.join(", "),
+        skills: Array.isArray(user.skills) ? user.skills.join(", ") : "",
         avatar: user.avatar || "",
       });
     }
@@ -168,21 +120,35 @@ export function UserProfile() {
     const previewUrl = URL.createObjectURL(file);
     setPreviewAvatar(previewUrl);
 
-    // In a real app, you would upload the file to a server here
-    // For this demo, we'll just set the preview URL as the avatar
-    // Normally, you'd get back a URL from your file upload service
-    setFormData({
-      ...formData,
-      avatar: previewUrl,
-    });
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64String = event.target?.result as string;
 
-    // Clear any previous errors
-    if (errors.avatar) {
+      // Set the Base64 string to formData
+      setFormData({
+        ...formData,
+        avatar: base64String,
+      });
+
+      // Clear any previous errors
+      if (errors.avatar) {
+        setErrors({
+          ...errors,
+          avatar: undefined,
+        });
+      }
+    };
+
+    reader.onerror = () => {
       setErrors({
         ...errors,
-        avatar: undefined,
+        avatar: "Failed to process image. Please try again.",
       });
-    }
+    };
+
+    // Read the file as a data URL (Base64)
+    reader.readAsDataURL(file);
   };
 
   const clearAvatarPreview = () => {
@@ -215,33 +181,44 @@ export function UserProfile() {
     }
   };
 
-  const handleEditProfile = () => {
+  const handleEditProfile = async () => {
     if (!validateForm()) return;
+    console.log("formData", formData);
 
-    // Update user data in the store
-    updateUser({
-      name: formData.name,
-      role: formData.role,
-      avatar: formData.avatar,
-    });
+    try {
+      // Update basic user info first
+      await updateUser({
+        name: formData.name,
+        role: formData.role,
+      });
 
-    // Update skills separately as it needs special processing
-    updateSkills(
-      formData.skills
-        .split(",")
-        .map((skill) => skill.trim())
-        .filter(Boolean)
-    );
+   
+      if (formData.avatar && formData.avatar.startsWith("data:image")) {
+        await updateAvatar(formData.avatar);
+      }
 
-    // Clean up preview URL if needed
-    if (previewAvatar) {
-      URL.revokeObjectURL(previewAvatar);
-      setPreviewAvatar(null);
+      // Update skills separately as it needs special processing
+      await updateSkills(
+        formData.skills
+          .split(",")
+          .map((skill) => skill.trim())
+          .filter(Boolean)
+      );
+
+      // Clean up preview URL if needed
+      if (previewAvatar) {
+        URL.revokeObjectURL(previewAvatar);
+        setPreviewAvatar(null);
+      }
+
+      toast.success("Profile updated successfully", {
+        richColors: true,
+      });
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      toast.error("Failed to update profile. Please try again.");
     }
-    toast.success("Profile updated successfully", {
-      richColors: true,
-    });
-    setIsEditDialogOpen(false);
   };
 
   const openEditDialog = () => {
@@ -302,11 +279,15 @@ export function UserProfile() {
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
-                {user.skills.map((skill, index) => (
-                  <Badge key={index} variant="secondary">
-                    {skill}
-                  </Badge>
-                ))}
+                {Array.isArray(user.skills) && user.skills.length > 0 ? (
+                  user.skills.map((skill, index) => (
+                    <Badge key={index} variant="secondary">
+                      {skill}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">No skills added yet</p>
+                )}
               </div>
             </div>
 

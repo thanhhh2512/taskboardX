@@ -7,13 +7,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { cn } from "@workspace/ui/lib/utils";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
+import { signup } from "@/lib/auth";
 
-// Enhanced signup form schema with name and password confirmation
 const formSchema = z
   .object({
     name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -30,7 +31,7 @@ const formSchema = z
     path: ["confirmPassword"],
   });
 
-// Type for the form data
+
 type FormData = z.infer<typeof formSchema>;
 
 export function SignupForm({ className, ...props }: { className?: string }) {
@@ -54,15 +55,22 @@ export function SignupForm({ className, ...props }: { className?: string }) {
 
   const onSubmit = async (data: FormData) => {
     try {
-      // Simulate API call - would connect to your backend registration service
-      console.log("Creating account:", data);
+      await signup(data.email, data.password, data.name);
 
-      // Show success message and redirect to login
+      toast.success("Account created successfully! Redirecting to login...", {
+        richColors: true
+      });
+
       setTimeout(() => {
         router.push("/login");
       }, 1500);
     } catch (error) {
       console.error("Signup error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create account. Please try again.", {richColors: true}
+      );
     }
   };
 
@@ -89,7 +97,6 @@ export function SignupForm({ className, ...props }: { className?: string }) {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
-            {/* Name field */}
             <div>
               <Label
                 htmlFor="name"
@@ -112,7 +119,6 @@ export function SignupForm({ className, ...props }: { className?: string }) {
               )}
             </div>
 
-            {/* Email field */}
             <div>
               <Label
                 htmlFor="email"
@@ -134,8 +140,6 @@ export function SignupForm({ className, ...props }: { className?: string }) {
                 </p>
               )}
             </div>
-
-            {/* Password field */}
             <div>
               <Label
                 htmlFor="password"
@@ -173,7 +177,6 @@ export function SignupForm({ className, ...props }: { className?: string }) {
               )}
             </div>
 
-            {/* Confirm Password field */}
             <div>
               <Label
                 htmlFor="confirmPassword"
