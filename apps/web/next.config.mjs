@@ -5,7 +5,7 @@ const nextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "https://prod-management-api-2zoi.encr.app/api/:path*",
+        destination: "https://staging-task-manage-umzi.encr.app/api/:path*",
       },
     ];
   },
