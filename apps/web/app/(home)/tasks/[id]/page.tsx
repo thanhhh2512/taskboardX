@@ -36,7 +36,8 @@ export default function TaskDetailPage() {
       setLoading(true);
       try {
         const taskData = await taskApi.getTaskById(taskId);
-        setTask(taskData);
+        console.log(taskData);
+        setTask(taskData.data ?? null);
       } catch (err) {
         console.error("Error fetching task:", err);
         setError("Failed to load task details. Please try again later.");
@@ -207,9 +208,10 @@ export default function TaskDetailPage() {
         editTask={task}
         showTriggerButton={false}
         onSuccess={() => {
+          console.log("success", taskApi);
           // Refresh task data after edit
           taskApi.getTaskById(taskId).then((updatedTask) => {
-            setTask(updatedTask);
+            setTask(updatedTask.data ?? null);
           });
         }}
       />
