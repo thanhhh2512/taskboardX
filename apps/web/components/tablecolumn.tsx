@@ -165,12 +165,7 @@ export const columns: ColumnDef<TaskType>[] = [
               {isLoading ? (
                 <Skeleton className="h-8 w-full" />
               ) : (
-                (
-                  projectMembers?.members as unknown as {
-                    id: string;
-                    name: string;
-                  }[]
-                )?.map((member) => (
+                projectMembers?.data?.map((member) => (
                   <DropdownMenuCheckboxItem
                     key={member.id}
                     checked={column.getFilterValue() === member.name}

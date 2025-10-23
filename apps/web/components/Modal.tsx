@@ -70,8 +70,8 @@ const Modal = ({
           </div>
         ) : (
           <>
-            {(!projectMembers?.members ||
-              (projectMembers.members as unknown as User[]).length === 0) && (
+            {(!projectMembers?.data ||
+              projectMembers.data.length === 0) && (
               <Alert variant="default" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>No project members</AlertTitle>
