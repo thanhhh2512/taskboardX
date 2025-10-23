@@ -149,7 +149,7 @@ export function DataTableFilters<TData>({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  {(projectMembers?.members as unknown as User[])?.map(
+                  {projectMembers?.data?.map(
                     (member: User) => (
                       <SelectItem key={member.id} value={member.name}>
                         {member.name}

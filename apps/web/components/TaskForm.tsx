@@ -195,7 +195,7 @@ export default function TaskForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {(projectMembers?.members as unknown as User[])?.map(
+                      {projectMembers?.data?.map(
                         (member: User) => (
                           <SelectItem key={member.id} value={member.id}>
                             {member.name}
