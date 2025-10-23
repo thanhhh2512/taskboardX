@@ -13,7 +13,7 @@ import {
 import { Badge } from "@workspace/ui/components/badge";
 import { Pencil, Trash2, ArrowLeft, Clock } from "lucide-react";
 import { format } from "date-fns";
-import { TaskType } from "@workspace/types";
+import { TaskType } from "@workspace/types/task";
 import { taskApi } from "@/lib/api";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
