@@ -9,7 +9,11 @@ import { Toaster } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import AppSidebar from "@/components/AppSidebarClient";
 
-export default function HomeLayout({ children }: { children: React.ReactNode }) {
+interface HomeLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function HomeLayout({ children }: HomeLayoutProps): React.JSX.Element {
   return (
     <SidebarProvider>
       <div className="flex h-screen w-screen">
