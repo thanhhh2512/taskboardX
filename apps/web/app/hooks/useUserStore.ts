@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { combine } from "zustand/middleware";
-import { User as ApiUser } from "@workspace/types";
 import { getCurrentUser, getAuthTokens } from "@/lib/auth";
 import { userApi } from "@/lib/api";
 
@@ -110,8 +109,8 @@ export const useUserStore = create(
           await userApi.updateUserById(userId, updates);
         } catch (error) {
           console.error("Failed to update user:", error);
-          // Revert to original state on error
-          (get() as any).initializeUser();
+          // Revert to original state on error - reinitialize user data
+          void useUserStore.getState().initializeUser();
         }
       },
 
@@ -138,7 +137,7 @@ export const useUserStore = create(
         } catch (error) {
           console.error("Failed to update avatar:", error);
           // Revert on error
-          (get() as any).initializeUser();
+          void useUserStore.getState().initializeUser();
         }
       },
 
@@ -165,7 +164,7 @@ export const useUserStore = create(
         } catch (error) {
           console.error("Failed to update skills:", error);
           // Revert on error
-          (get() as any).initializeUser();
+          void useUserStore.getState().initializeUser();
         }
       },
 

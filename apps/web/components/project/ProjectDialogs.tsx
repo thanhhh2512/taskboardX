@@ -16,13 +16,6 @@ import { Textarea } from "@workspace/ui/components/textarea";
 import { Project } from "@/app/hooks/useTaskStore";
 import { z } from "zod";
 import { useAssignees } from "@/app/hooks/useTasksQuery";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
 import { AlertCircle } from "lucide-react";
 import {
   Alert,

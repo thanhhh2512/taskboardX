@@ -8,7 +8,7 @@ import {
 import Kanban from "./Kanban";
 import { DataTable } from "./Table";
 import { columns } from "./tablecolumn";
-import { useProjects, useTasks } from "@/app/hooks/useTasksQuery";
+import { useTasks } from "@/app/hooks/useTasksQuery";
 import { useProjectStore } from "@/app/hooks/useTaskStore";
 import { TaskType } from "@workspace/types";
 

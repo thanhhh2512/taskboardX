@@ -1,5 +1,5 @@
 import React from "react";
-import { Table } from "@tanstack/react-table";
+import { Table, ColumnFiltersState } from "@tanstack/react-table";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Filter, Search, X } from "lucide-react";
@@ -30,8 +30,8 @@ interface DataTableFiltersProps<TData> {
   table: Table<TData>;
   globalFilter: string;
   setGlobalFilter: (value: string) => void;
-  columnFilters: any[];
-  setColumnFilters: (filters: any[]) => void;
+  columnFilters: ColumnFiltersState;
+  setColumnFilters: (filters: ColumnFiltersState) => void;
   openFilters: boolean;
   setOpenFilters: (open: boolean) => void;
 }

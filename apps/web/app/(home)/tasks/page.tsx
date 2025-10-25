@@ -17,7 +17,7 @@ import Modal from "@/components/Modal";
 import { TaskStatus } from "@workspace/types";
 
 export default function TasksPage() {
-  const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { data: projects } = useProjects();
   const setProjectId = useProjectStore((state) => state.setProjectId);
   const projectId = useProjectStore((state) => state.projectId);
   const [searchTerm, setSearchTerm] = useState("");
@@ -98,14 +98,13 @@ export default function TasksPage() {
         </div>
 
         <Select
-          value={projectId }
-          onValueChange={(value) => setProjectId( value)}
+          value={projectId}
+          onValueChange={(value) => setProjectId(value)}
         >
           <SelectTrigger className="w-full md:w-[200px]">
             <SelectValue placeholder="Select Project" />
           </SelectTrigger>
           <SelectContent>
-            
             {projects?.map((project: { id: string; name: string }) => (
               <SelectItem key={project.id} value={project.id}>
                 {project.name}
@@ -138,7 +137,10 @@ export default function TasksPage() {
           Found {filteredTasks.length} result
           {filteredTasks.length !== 1 ? "s" : ""}
           {statusFilter !== "all" ? ` with status "${statusFilter}"` : ""}
-          for "{searchTerm}"
+          {" for "}
+          {'"'}
+          {searchTerm}
+          {'"'}
         </div>
       )}
 
@@ -146,7 +148,9 @@ export default function TasksPage() {
       {!searchTerm && statusFilter !== "all" && (
         <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
           Showing {filteredTasks.length} task
-          {filteredTasks.length !== 1 ? "s" : ""} with status "{statusFilter}"
+          {filteredTasks.length !== 1 ? "s" : ""} with status {'"'}
+          {statusFilter}
+          {'"'}
         </div>
       )}
 

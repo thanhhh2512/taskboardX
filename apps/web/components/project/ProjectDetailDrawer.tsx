@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, memo, useMemo, useState, useCallback } from "react";
+import React, { memo, useMemo, useState, useCallback } from "react";
+import { TaskType } from "@workspace/types";
 import {
   Sheet,
   SheetContent,
@@ -46,7 +47,15 @@ interface ProjectDetailDrawerProps {
   openAddUserDialog: (project: Project) => void;
 }
 
-const TaskCard = memo(({ task, getStatusInfo }: any) => {
+interface TaskCardProps {
+  task: TaskType;
+  getStatusInfo: (status: string) => {
+    badge: React.ReactNode;
+    icon: React.ReactNode;
+  };
+}
+
+const TaskCard = memo(({ task, getStatusInfo }: TaskCardProps) => {
   const status = getStatusInfo(task.status);
   return (
     <Card key={task.id} className="p-3">

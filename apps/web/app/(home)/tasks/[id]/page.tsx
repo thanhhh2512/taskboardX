@@ -13,7 +13,7 @@ import {
 import { Badge } from "@workspace/ui/components/badge";
 import { Pencil, Trash2, ArrowLeft, Clock } from "lucide-react";
 import { format } from "date-fns";
-import { TaskType } from "@workspace/types/task";
+import { TaskType } from "@workspace/types";
 import { taskApi } from "@/lib/api";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -91,7 +91,9 @@ export default function TaskDetailPage() {
     try {
       return format(new Date(dateString), "PPP");
     } catch (err) {
+      console.log("Date formatting error:", err);
       return "Invalid date";
+
     }
   };
 

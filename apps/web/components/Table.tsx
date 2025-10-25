@@ -181,8 +181,8 @@ export function DataTable<TData, TValue>({
     }
   }, [openModal]);
 
-  const handleRowClick = (task: any) => {
-    router.push(`/tasks/${task.id}`);
+  const handleRowClick = (task: TData) => {
+    router.push(`/tasks/${(task as TaskType).id}`);
   };
 
   const handleCancelDelete = () => {
@@ -215,7 +215,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table Content */}
-      <DataTableContent
+      <DataTableContent<TData>
         table={table}
         globalFilter={globalFilter}
         columnFilters={columnFilters}

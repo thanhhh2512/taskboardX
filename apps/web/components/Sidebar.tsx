@@ -2,7 +2,6 @@
 
 import {
   Folder,
-  Shapes,
   SquareCheck,
   User,
   LayoutDashboard,

@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { combine } from "zustand/middleware";
-import { Project as ProjectType, User } from "@workspace/types";
-import { projectApi, taskApi } from "@/lib/api";
+import { projectApi } from "@/lib/api";
 
 // API Response Types
 interface ApiResponse<T> {

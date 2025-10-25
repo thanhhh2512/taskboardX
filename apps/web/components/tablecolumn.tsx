@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { TaskType } from "@workspace/types";
+import { TaskType, User } from "@workspace/types";
 import { format } from "date-fns";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -10,7 +10,6 @@ import {
   ArrowUpDown,
   ArrowDown,
   ArrowUp,
-  Check,
   Filter,
 } from "lucide-react";
 import {
@@ -29,6 +28,50 @@ import { Badge } from "@workspace/ui/components/badge";
 import { useProjectMembers } from "@/app/hooks/useTasksQuery";
 import { useProjectStore } from "@/app/hooks/useTaskStore";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { Column } from "@tanstack/react-table";
+
+// Component for Assignee column header
+function AssigneeHeader({ column }: { column: Column<TaskType, unknown> }) {
+  const projectId = useProjectStore((state) => state.projectId);
+  const { data: projectMembers, isLoading } = useProjectMembers(projectId);
+
+  return (
+    <div className="flex items-center space-x-2">
+      <span>Assignee</span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Filter className="h-4 w-4" />
+            {typeof column.getFilterValue() === "string" && (
+              <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary"></div>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuCheckboxItem
+            checked={column.getFilterValue() === undefined}
+            onCheckedChange={() => column.setFilterValue(undefined)}
+          >
+            All
+          </DropdownMenuCheckboxItem>
+          {isLoading ? (
+            <Skeleton className="h-8 w-full" />
+          ) : (
+            projectMembers?.data?.map((member: User) => (
+              <DropdownMenuCheckboxItem
+                key={member.id}
+                checked={column.getFilterValue() === member.name}
+                onCheckedChange={() => column.setFilterValue(member.name)}
+              >
+                {member.name}
+              </DropdownMenuCheckboxItem>
+            ))
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
 
 export const columns: ColumnDef<TaskType>[] = [
   {
@@ -139,47 +182,7 @@ export const columns: ColumnDef<TaskType>[] = [
   },
   {
     accessorKey: "assignee",
-    header: ({ column }) => {
-      const projectId = useProjectStore((state) => state.projectId);
-      const { data: projectMembers, isLoading } = useProjectMembers(projectId);
-
-      return (
-        <div className="flex items-center space-x-2">
-          <span>Assignee</span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Filter className="h-4 w-4" />
-                {typeof column.getFilterValue() === "string" && (
-                  <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary"></div>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuCheckboxItem
-                checked={column.getFilterValue() === undefined}
-                onCheckedChange={() => column.setFilterValue(undefined)}
-              >
-                All
-              </DropdownMenuCheckboxItem>
-              {isLoading ? (
-                <Skeleton className="h-8 w-full" />
-              ) : (
-                projectMembers?.data?.map((member) => (
-                  <DropdownMenuCheckboxItem
-                    key={member.id}
-                    checked={column.getFilterValue() === member.name}
-                    onCheckedChange={() => column.setFilterValue(member.name)}
-                  >
-                    {member.name}
-                  </DropdownMenuCheckboxItem>
-                ))
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      );
-    },
+    header: ({ column }) => <AssigneeHeader column={column} />,
     cell: ({ row }) => {
       const { name }: { id: string; name: string } = row.getValue("assignee");
       return <div>{name}</div>;

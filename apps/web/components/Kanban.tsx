@@ -12,14 +12,14 @@ import {
 } from "@dnd-kit/core";
 import { Task } from "./Task";
 import { Column } from "./Column";
-import { ColumnType, Project, TaskStatus, TaskType } from "@workspace/types";
+import { ColumnType, TaskStatus, TaskType } from "@workspace/types";
 import Modal from "./Modal";
 import { useUpdateTask } from "@/app/hooks/useTasksQuery";
 import { useProjectStore } from "@/app/hooks/useTaskStore";
 import ProjectSelector from "./ProjectSelector";
 import { useMediaQuery } from "@/app/hooks/useMediaQuery";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area";
 import { Skeleton } from "@workspace/ui/components/skeleton";

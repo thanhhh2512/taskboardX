@@ -10,7 +10,7 @@ import { AlertCircle } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import { useProjectStore } from "@/app/hooks/useTaskStore";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { TaskType, User } from "@workspace/types";
+import { TaskType } from "@workspace/types";
 import { useProjectMembers } from "@/app/hooks/useTasksQuery";
 import {
   Alert,

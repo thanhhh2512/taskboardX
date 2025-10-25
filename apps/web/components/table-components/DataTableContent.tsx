@@ -1,5 +1,5 @@
 import React from "react";
-import { Table as TanstackTable } from "@tanstack/react-table";
+import { Table as TanstackTable, ColumnFiltersState } from "@tanstack/react-table";
 import {
   Table,
   TableBody,
@@ -14,8 +14,8 @@ import { SearchX } from "lucide-react";
 interface DataTableContentProps<TData> {
   table: TanstackTable<TData>;
   globalFilter: string;
-  columnFilters: any[];
-  onRowClick: (row: any) => void;
+  columnFilters: ColumnFiltersState;
+  onRowClick: (row: TData) => void;
 }
 
 export function DataTableContent<TData>({

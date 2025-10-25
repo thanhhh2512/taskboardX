@@ -8,7 +8,6 @@ import NotificationBell from "@/components/NotificationBell";
 
 // Import AppSidebarClient directly as it is a client component now
 import AppSidebar from "@/components/AppSidebarClient";
-import Header from "@/components/Header";
 
 export default function HomeLayout({
   children,

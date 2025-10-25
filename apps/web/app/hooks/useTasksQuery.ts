@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { TaskType, TaskPostPayload, Project } from "@workspace/types";
+import { TaskType, TaskPostPayload, TaskStatus, Project } from "@workspace/types";
 import { projectApi, taskApi, userApi } from "@/lib/api";
 
 // Fetch Assignees
@@ -117,7 +117,7 @@ export const useUpdateTaskStatus = () => {
       taskId: string;
       status: string;
       projectId: string;
-    }) => taskApi.updateTaskStatus(taskId, projectId, status as any),
+    }) => taskApi.updateTaskStatus(taskId, projectId, status as TaskStatus),
     onSuccess: (response, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["tasks", variables.projectId],
@@ -146,23 +146,23 @@ export const useUpdateTask = () => {
       ]);
 
       // Optimistically update to the new value
-      queryClient.setQueryData(["tasks", updatedTask.projectId], (old: any) => {
+      queryClient.setQueryData(["tasks", updatedTask.projectId], (old: { tasks: TaskType[] } | undefined) => {
         const tasks = old?.tasks || [];
         return {
           ...old,
           tasks: tasks.map((task: TaskType) =>
             task.id === updatedTask.id
               ? {
-                  ...task,
-                  title: updatedTask.title,
-                  description: updatedTask.description,
-                  status: updatedTask.status,
-                  assignee: {
-                    id: updatedTask.assigneeId,
-                    name: task.assignee?.name || "", // Keep existing name until refetch
-                  },
-                  dueDate: updatedTask.dueDate,
-                }
+                ...task,
+                title: updatedTask.title,
+                description: updatedTask.description,
+                status: updatedTask.status,
+                assignee: {
+                  id: updatedTask.assigneeId,
+                  name: task.assignee?.name || "", // Keep existing name until refetch
+                },
+                dueDate: updatedTask.dueDate,
+              }
               : task
           ),
         };
@@ -202,7 +202,7 @@ export const useDeleteTask = () => {
   return useMutation({
     mutationFn: ({
       taskId,
-      projectId,
+
     }: {
       taskId: string;
       projectId: string;

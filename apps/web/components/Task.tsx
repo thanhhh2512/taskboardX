@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
-import { Pencil, User, Calendar, ExternalLink } from "lucide-react";
+import { Pencil, Calendar, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -41,18 +41,11 @@ export function Task({
   description,
   assignee,
   dueDate,
-  status,
   onEdit,
 }: TaskProps) {
   const router = useRouter();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useSortable({ id });
 
   const handleTaskClick = () => {
     router.push(`/tasks/${id}`);
