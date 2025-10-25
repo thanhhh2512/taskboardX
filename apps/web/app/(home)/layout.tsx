@@ -1,7 +1,5 @@
 "use client";
 
-import type { ReactElement } from "react";
-
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -11,7 +9,7 @@ import { Toaster } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import AppSidebar from "@/components/AppSidebarClient";
 
-export default function HomeLayout({ children }: { children: React.ReactNode }): ReactElement {
+export default function HomeLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <div className="flex h-screen w-screen">

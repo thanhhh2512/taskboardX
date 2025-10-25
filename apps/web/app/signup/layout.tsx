@@ -1,11 +1,10 @@
-import type { ReactElement } from "react";
 import { Toaster } from "sonner";
 
 export default function SignupLayout({
   children,
 }: {
   children: React.ReactNode;
-}): ReactElement {
+}) {
   return (
     <>
       <main className="flex-1 overflow-auto flex flex-col">

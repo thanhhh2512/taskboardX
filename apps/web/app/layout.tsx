@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import type { ReactElement } from "react";
 import "@workspace/ui/styles/globals.css";
 import { Providers } from "@/components/providers";
 
@@ -12,7 +11,7 @@ export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
-}): ReactElement {
+}) {
   return (
     <html lang="en" suppressHydrationWarning className="font-sans antialiased">
       <body className="min-h-screen bg-white dark:bg-gray-950 text-black dark:text-white transition-colors duration-200">
