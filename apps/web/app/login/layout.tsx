@@ -1,10 +1,11 @@
+import type { ReactElement, ReactNode } from "react";
 import { Toaster } from "sonner";
 
 export default function LoginLayout({
   children,
 }: {
-  children: React.ReactNode;
-}) {
+  children: ReactNode;
+}): ReactElement {
   return (
     <>
       <main className="flex-1 overflow-auto flex flex-col">
