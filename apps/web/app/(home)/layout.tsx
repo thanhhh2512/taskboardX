@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -5,22 +7,16 @@ import {
 
 import { Toaster } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
-
-// Import AppSidebarClient directly as it is a client component now
 import AppSidebar from "@/components/AppSidebarClient";
 
-export default function HomeLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function HomeLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <div className="flex h-screen w-screen">
         <AppSidebar />
         <main className="flex-1 overflow-auto flex flex-col bg-white dark:bg-gray-900">
-          {/* <Header /> */}
           <div className="flex-1 overflow-auto">
+            {/* nếu SidebarTrigger là client component, hãy di chuyển nó ra khỏi Server layout */}
             <SidebarTrigger />
             {children}
           </div>
