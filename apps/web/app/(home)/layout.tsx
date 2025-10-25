@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 
 import {
@@ -16,7 +18,6 @@ export default function HomeLayout({ children }: { children: ReactNode }) {
         <AppSidebar />
         <main className="flex-1 overflow-auto flex flex-col bg-white dark:bg-gray-900">
           <div className="flex-1 overflow-auto">
-            {/* nếu SidebarTrigger là client component, hãy di chuyển nó ra khỏi Server layout */}
             <SidebarTrigger />
             {children}
           </div>
