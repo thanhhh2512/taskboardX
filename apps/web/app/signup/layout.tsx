@@ -1,10 +1,10 @@
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 import { Toaster } from "sonner";
 
 export default function SignupLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }): ReactElement {
   return (
     <>

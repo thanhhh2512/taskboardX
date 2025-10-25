@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 import "@workspace/ui/styles/globals.css";
 import { Providers } from "@/components/providers";
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }): ReactElement {
   return (
     <html lang="en" suppressHydrationWarning className="font-sans antialiased">
