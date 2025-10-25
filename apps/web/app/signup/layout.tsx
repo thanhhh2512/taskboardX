@@ -1,10 +1,10 @@
 import { Toaster } from "sonner";
 
-export default function SignupLayout({
-  children,
-}: {
+interface SignupLayoutProps {
   children: React.ReactNode;
-}) {
+}
+
+export default function SignupLayout({ children }: SignupLayoutProps): React.JSX.Element {
   return (
     <>
       <main className="flex-1 overflow-auto flex flex-col">
