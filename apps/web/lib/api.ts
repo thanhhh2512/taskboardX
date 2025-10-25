@@ -1,10 +1,10 @@
 import {
-  ApiResponse,
-  Project,
   TaskPostPayload,
   TaskStatus,
   TaskType,
   User,
+  Project,
+  ApiResponse,
 } from "@workspace/types";
 import { getAuthTokens } from "./auth";
 
@@ -369,17 +369,21 @@ export const taskApi = {
   ): Promise<ApiResponse<TaskType>> => {
     // Get the current task data
     const taskResponse = await taskApi.getTaskById(taskId);
-    const task = (taskResponse as any).data || (taskResponse as any).task || taskResponse;
+    const task: TaskType = taskResponse.data || (taskResponse as unknown as TaskType);
 
-    if (!task) {
+    if (!task || !task.id) {
       throw new Error("Task not found");
     }
 
     // Update only the status
     return taskApi.updateTask(taskId, {
-      ...task,
+      id: task.id,
+      title: task.title,
+      description: task.description || "",
       status,
+      assigneeId: task.assignee?.id || "",
       projectId,
+      dueDate: task.dueDate || "",
     });
   },
 

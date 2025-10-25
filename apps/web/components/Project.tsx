@@ -12,9 +12,7 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import {
   Plus,
-  Pencil,
   MoreVertical,
-  Calendar,
   Users,
   ClipboardList,
 } from "lucide-react";

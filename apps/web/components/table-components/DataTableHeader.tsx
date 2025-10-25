@@ -1,22 +1,20 @@
 import React from "react";
-import { Table } from "@tanstack/react-table";
+import { Table, ColumnFiltersState } from "@tanstack/react-table";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
-import { Search, LayoutList, Filter } from "lucide-react";
-import ProjectSelector from "../ProjectSelector";
+import { Search, LayoutList } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
-import { Badge } from "@workspace/ui/components/badge";
 
 interface DataTableHeaderProps<TData> {
   table: Table<TData>;
   globalFilter: string;
   setGlobalFilter: (value: string) => void;
-  columnFilters: any[];
+  columnFilters: ColumnFiltersState;
   isMobile: boolean;
   renderMobileFilters: () => React.ReactNode;
 }
@@ -25,7 +23,6 @@ export function DataTableHeader<TData>({
   table,
   globalFilter,
   setGlobalFilter,
-  columnFilters,
   isMobile,
   renderMobileFilters,
 }: DataTableHeaderProps<TData>) {

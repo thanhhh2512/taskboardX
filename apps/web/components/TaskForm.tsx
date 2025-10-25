@@ -48,7 +48,6 @@ const taskFormSchema = z.object({
 });
 
 // Form types
-type TaskFormValues = z.infer<typeof taskFormSchema>;
 
 interface TaskFormProps {
   projectId: string;
@@ -195,13 +194,11 @@ export default function TaskForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {projectMembers?.data?.map(
-                        (member: User) => (
-                          <SelectItem key={member.id} value={member.id}>
-                            {member.name}
-                          </SelectItem>
-                        )
-                      )}
+                      {projectMembers?.data?.map((member: User) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}

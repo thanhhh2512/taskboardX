@@ -6,7 +6,6 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LayoutDashboard } from "lucide-react";
-import Link from "next/link";
 import { toast } from "sonner";
 
 import { cn } from "@workspace/ui/lib/utils";

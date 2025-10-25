@@ -1,7 +1,6 @@
 import React from "react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Card, CardContent } from "@workspace/ui/components/card";
-import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 
 export default function TasksLoading() {
   return (
